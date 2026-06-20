@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <link rel="manifest" href="manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stock Count Dashboard</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -382,6 +383,12 @@
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10);
     XLSX.writeFile(wb, `stock-count-${dateStr}.xlsx`);
+  }
+</script>
+
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
   }
 </script>
 

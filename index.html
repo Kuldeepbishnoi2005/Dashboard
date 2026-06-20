@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stock Count Dashboard</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -22,7 +23,7 @@
       border-radius: 16px;
       padding: 2rem;
       width: 100%;
-      max-width: 700px;
+      max-width: 740px;
       box-shadow: 0 2px 16px rgba(0,0,0,0.08);
     }
 
@@ -33,60 +34,44 @@
       margin-bottom: 1.75rem;
     }
 
-    .header h1 {
-      font-size: 20px;
-      font-weight: 600;
-      color: #111;
-    }
+    .header h1 { font-size: 20px; font-weight: 600; color: #111; }
 
     .header-icon {
-      width: 36px;
-      height: 36px;
-      background: #111;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 36px; height: 36px;
+      background: #111; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
     }
-
     .header-icon svg {
-      width: 20px;
-      height: 20px;
-      stroke: #fff;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      width: 20px; height: 20px;
+      stroke: #fff; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
     }
 
-    /* Serial count — large top row */
+    /* Serial */
     .serial-row {
-      background: #111;
-      border-radius: 12px;
+      background: #111; border-radius: 12px;
       padding: 1.25rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 1.25rem;
     }
+    .serial-row .label { font-size: 13px; color: #aaa; margin-bottom: 4px; }
+    .serial-row .count { font-size: 36px; font-weight: 600; color: #fff; line-height: 1; }
 
-    .serial-row .label {
-      font-size: 13px;
-      color: #aaa;
-      margin-bottom: 4px;
-    }
-
-    .serial-row .count {
-      font-size: 36px;
+    /* Section headings */
+    .section-title {
+      font-size: 12px;
       font-weight: 600;
-      color: #fff;
-      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #888;
+      margin-bottom: 10px;
+      margin-top: 4px;
     }
 
-    /* Category grid */
+    /* Grid */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 12px;
       margin-bottom: 1.25rem;
     }
@@ -98,110 +83,100 @@
       padding: 1rem 1.25rem;
     }
 
-    .card .label {
-      font-size: 12px;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
+    /* Extra section cards — orange tint */
+    .card.extra {
+      background: #fff8f0;
+      border-color: #fdd9ae;
     }
 
+    .card .label {
+      font-size: 12px; color: #888;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
     .card .count {
-      font-size: 30px;
-      font-weight: 600;
-      color: #111;
-      line-height: 1;
-      margin-bottom: 12px;
+      font-size: 30px; font-weight: 600; color: #111;
+      line-height: 1; margin-bottom: 12px;
     }
 
     /* Buttons */
-    .btn-row {
-      display: flex;
-      gap: 8px;
-    }
+    .btn-row { display: flex; gap: 8px; }
 
     .btn {
-      border: 1px solid #ddd;
-      background: #fff;
-      border-radius: 8px;
-      width: 36px;
-      height: 36px;
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #333;
-      transition: background 0.12s, border-color 0.12s;
+      border: 1px solid #ddd; background: #fff;
+      border-radius: 8px; width: 36px; height: 36px;
+      font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #333; transition: background 0.12s, border-color 0.12s;
       line-height: 1;
     }
-
     .btn-inc:hover { background: #e6f4ea; border-color: #4caf50; color: #2e7d32; }
     .btn-dec:hover { background: #fdecea; border-color: #ef5350; color: #c62828; }
 
-    .serial-row .btn {
-      background: #222;
-      border-color: #444;
-      color: #fff;
-    }
+    .serial-row .btn { background: #222; border-color: #444; color: #fff; }
     .serial-row .btn-inc:hover { background: #2e7d32; border-color: #4caf50; }
     .serial-row .btn-dec:hover { background: #c62828; border-color: #ef5350; }
 
-    /* Total */
+    /* Totals */
     .total-row {
-      background: #f0f0f0;
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      border-radius: 12px; padding: 1rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 1rem;
     }
+    .total-row.main { background: #f0f0f0; }
+    .total-row.extra-total { background: #fff3e0; border: 1px solid #fdd9ae; }
 
-    .total-row .total-label {
-      font-size: 15px;
-      color: #555;
-      font-weight: 500;
+    .total-row .total-label { font-size: 15px; color: #555; font-weight: 500; }
+    .total-row .total-val { font-size: 36px; font-weight: 700; color: #111; }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1.25rem;
     }
 
-    .total-row .total-val {
-      font-size: 36px;
-      font-weight: 700;
-      color: #111;
+    /* Divider */
+    .divider {
+      border: none; border-top: 1px solid #eee;
+      margin: 1.25rem 0;
     }
 
-    /* Reset */
+    /* Action buttons */
+    .action-row { display: flex; gap: 10px; margin-bottom: 0; }
+
+    .export-btn, .reset-btn {
+      flex: 1; padding: 11px; border-radius: 10px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; transition: background 0.12s;
+    }
+
+    .export-btn {
+      border: 1px solid #c8e6c9; background: #e8f5e9; color: #2e7d32;
+    }
+    .export-btn:hover { background: #c8e6c9; }
+
     .reset-btn {
-      width: 100%;
-      padding: 11px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #c62828;
-      font-size: 15px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.12s;
+      border: 1px solid #ddd; background: #fff; color: #c62828;
     }
-
     .reset-btn:hover { background: #fdecea; }
 
-    .reset-btn svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    .export-btn svg, .reset-btn svg {
+      width: 18px; height: 18px;
+      stroke: currentColor; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
     }
 
-    @media (max-width: 480px) {
+    .note {
+      font-size: 11px; color: #aaa; text-align: center;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 500px) {
       .grid { grid-template-columns: 1fr 1fr; }
+      .totals-grid { grid-template-columns: 1fr; }
+      .action-row { flex-direction: column; }
       body { padding: 1rem 0.5rem; }
     }
   </style>
@@ -228,8 +203,9 @@
     </div>
   </div>
 
-  <!-- Category Cards -->
-  <div class="grid">
+  <!-- Main Categories -->
+  <div class="section-title">Main Categories</div>
+  <div class="grid" id="main-grid">
     <div class="card">
       <div class="label">Damage</div>
       <div class="count" id="damage-val">0</div>
@@ -278,44 +254,134 @@
         <button class="btn btn-inc" onclick="change('dmgall', 1)">+</button>
       </div>
     </div>
+    <div class="card">
+      <div class="label">Body Damage</div>
+      <div class="count" id="bodydmg-val">0</div>
+      <div class="btn-row">
+        <button class="btn btn-dec" onclick="change('bodydmg', -1)">−</button>
+        <button class="btn btn-inc" onclick="change('bodydmg', 1)">+</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Total -->
-  <div class="total-row">
-    <span class="total-label">Total Stock</span>
-    <span class="total-val" id="total-val">0</span>
+  <hr class="divider" />
+
+  <!-- Extra Section — not added to main total -->
+  <div class="section-title" style="color:#e65100;">Extra (Alg Total)</div>
+  <div class="grid">
+    <div class="card extra">
+      <div class="label">Extra Ring</div>
+      <div class="count" id="extraring-val">0</div>
+      <div class="btn-row">
+        <button class="btn btn-dec" onclick="change('extraring', -1)">−</button>
+        <button class="btn btn-inc" onclick="change('extraring', 1)">+</button>
+      </div>
+    </div>
+    <div class="card extra">
+      <div class="label">Extra Plate</div>
+      <div class="count" id="extraplate-val">0</div>
+      <div class="btn-row">
+        <button class="btn btn-dec" onclick="change('extraplate', -1)">−</button>
+        <button class="btn btn-inc" onclick="change('extraplate', 1)">+</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Reset -->
-  <button class="reset-btn" onclick="resetAll()">
-    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-    Reset all
-  </button>
+  <!-- Totals side by side -->
+  <div class="totals-grid">
+    <div class="total-row main">
+      <span class="total-label">Total Stock</span>
+      <span class="total-val" id="total-val">0</span>
+    </div>
+    <div class="total-row extra-total">
+      <span class="total-label">Extra Total</span>
+      <span class="total-val" id="extra-total-val">0</span>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-row">
+    <button class="export-btn" onclick="exportExcel()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export to Excel
+    </button>
+    <button class="reset-btn" onclick="resetAll()">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      Reset all
+    </button>
+  </div>
+  <div class="note">Export karoge to ek .xlsx file download hogi with today's date</div>
 </div>
 
 <script>
-  const fields = ['serial', 'damage', 'noplate', 'noring', 'nopr', 'dmgring', 'dmgall'];
+  // mainFields — included in Total Stock
+  const mainFields  = ['serial','damage','noplate','noring','nopr','dmgring','dmgall','bodydmg'];
+  // extraFields — separate total only
+  const extraFields = ['extraring','extraplate'];
+  const allFields   = [...mainFields, ...extraFields];
+
   const counts = {};
-  fields.forEach(f => counts[f] = 0);
+  allFields.forEach(f => counts[f] = 0);
 
   function change(field, delta) {
     counts[field] = Math.max(0, counts[field] + delta);
     document.getElementById(field + '-val').textContent = counts[field];
-    updateTotal();
+    updateTotals();
   }
 
-  function updateTotal() {
-    const total = fields.reduce((sum, f) => sum + counts[f], 0);
-    document.getElementById('total-val').textContent = total;
+  function updateTotals() {
+    const mainTotal  = mainFields.reduce((s, f) => s + counts[f], 0);
+    const extraTotal = extraFields.reduce((s, f) => s + counts[f], 0);
+    document.getElementById('total-val').textContent       = mainTotal;
+    document.getElementById('extra-total-val').textContent = extraTotal;
   }
 
   function resetAll() {
     if (!confirm('Sab counts zero ho jayenge. Sure ho?')) return;
-    fields.forEach(f => {
+    allFields.forEach(f => {
       counts[f] = 0;
       document.getElementById(f + '-val').textContent = '0';
     });
-    document.getElementById('total-val').textContent = '0';
+    document.getElementById('total-val').textContent       = '0';
+    document.getElementById('extra-total-val').textContent = '0';
+  }
+
+  // Label map for Excel headers
+  const labels = {
+    serial:     'Serial Count',
+    damage:     'Damage',
+    noplate:    'No Plate',
+    noring:     'No Ring',
+    nopr:       'No P/R',
+    dmgring:    'Damage / Ring',
+    dmgall:     'Damage / Plate / Ring',
+    bodydmg:    'Body Damage',
+    extraring:  'Extra Ring',
+    extraplate: 'Extra Plate'
+  };
+
+  function exportExcel() {
+    // Row 1: headers
+    const headers = allFields.map(f => labels[f]);
+    headers.push('Total Stock', 'Extra Total');
+
+    // Row 2: values
+    const values  = allFields.map(f => counts[f]);
+    const mainTotal  = mainFields.reduce((s, f) => s + counts[f], 0);
+    const extraTotal = extraFields.reduce((s, f) => s + counts[f], 0);
+    values.push(mainTotal, extraTotal);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, values]);
+
+    // Column widths
+    ws['!cols'] = headers.map(() => ({ wch: 22 }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Stock Count');
+
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `stock-count-${dateStr}.xlsx`);
   }
 </script>
 

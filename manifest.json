@@ -1,6 +1,6 @@
 {
-  "name": "RailOne",
-  "short_name": "RailOne",
+  "name": "Stock Count",
+  "short_name": "SC",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
